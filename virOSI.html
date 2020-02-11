@@ -1,0 +1,857 @@
+<meta charset="utf-8">
+<html>
+    <head>
+        <title>Camadas de Rede - Estagio</title>
+        <script>
+            var canvas, context; 
+            var imgFundo;
+            var mouse = {x:0,y:0,botao:-1,camada:-1};
+            var TECLA_ESQUERDA = false;
+            var TECLA_DIREITA = false;
+            var TECLA_CIMA = false;
+            var TECLA_BAIXO = false;
+            var menu = true;
+            var imgTempo;
+            var imgPontos;
+            var imgFase;
+            var imgAcertos;
+            var imgFatec;
+            var imgBtnJogar;
+            var imgBtnTutorial;
+            var imgBtnCreditos;
+            var segurando = false;
+            var transicao = false;
+            var cursor = true;
+            var botoes = [];
+            var seqBotoes = 0;
+            var pontuacao = 0;
+            var pontuacaoMaxima = 0;
+            var timer = 90;
+            var timerIntervaloId;
+            var espacoBotoes = [];
+            var telaAtual = 0;
+            var telaFinal = 3;
+            var acertos = 0;
+            var estados = {menu:0,jogo:1,creditos:2,tutorial:3};
+            var estadoDoJogo = estados.menu;
+            var somTela;
+            var somMenu;
+            var btnSelecionado = 'J';
+            var TiposCamadas = {
+                Fisica: 0,
+                DataLink: 1,
+                Network: 2,
+                Transport: 3,
+                Session: 4,
+                Presentation: 5,
+                Application: 6
+            };
+            
+            
+            function Iniciar(){
+                canvas = document.getElementById("canvas");
+                context = canvas.getContext('2d');
+                btnFim = document.getElementById("fim");
+                btnFim.style.display = 'none';
+                
+                imgFundo = new Image();
+                //Botoes do menu
+                imgBtnJogar = new Image();
+                imgBtnTutorial = new Image();
+                imgBtnCreditos = new Image();
+                
+                imgBg = new Image();
+                imgBg.src = "./img/bg_geral.png";
+                imgFase = new Image();
+                imgFase.src = "./img/fase.png";
+                imgPontos = new Image();
+                imgPontos.src = "./img/pontos.png";
+                imgTempo = new Image();
+                imgTempo.src = "./img/tempo.png";
+                imgAcertos = new Image();
+                imgAcertos.src = "./img/acertos.png";
+                imgFatec = new Image();
+                imgFatec.src = "./img/fatec.png";
+                imgTxtTutorial = new Image();
+                imgTxtTutorial.src = "./img/txt_tutorial.png";
+                ConfiguraSons();
+                IniciarCamadas();
+                IniciarEspacos();
+                
+                setInterval(Loop, 1000/60);
+                setInterval(PiscarCursor, 1000);
+            }
+            
+            
+            function ConfiguraSons()
+            {
+                somTela = new Audio();
+                somTela.src = './som/tela_estagio.wav';
+                somTela.pause();
+			
+                somMenu = new Audio();
+                somMenu.src = './som/menu_estagio.wav';      
+                somMenu.pause()
+;		    }
+            
+
+            function Loop(){
+                Atualizar();
+                
+            }
+            
+            
+            function Atualizar(){
+               switch(estadoDoJogo)
+			     {
+                     case estados.menu:
+                         somMenu.pause();
+                         somTela.pause();
+                         somMenu.play();
+                         AtualizaMenu();
+                         break;
+				    case estados.jogo:
+                         somMenu.pause();
+                         somTela.play();
+                         AtualizaJogo();
+                         break;
+				    case estados.creditos:
+                         somTela.pause();
+                         somMenu.play();
+                         AtualizaCreditos();
+                         break;
+				    case estados.tutorial:
+                         somTela.pause();
+                         somMenu.play();
+                         AtualizaTutorial();
+                         break;
+		    	 }	
+                
+                
+                
+                
+            }
+            
+            
+             function AtualizaMenu()
+            {
+                imgFundo.src = "./img/tela_titulo.png";
+                imgBtnJogar.src = "./img/jogar_1.png";
+                imgBtnTutorial.src = "./img/tutorial_1.png";
+                imgBtnCreditos.src = "./img/creditos_1.png";
+                
+                if (btnSelecionado == 'J')
+                    imgBtnJogar.src = "./img/jogar_2.png";
+                else if (btnSelecionado == 'T')
+                    imgBtnTutorial.src = "./img/tutorial_2.png";
+                else if (btnSelecionado == 'C')
+                    imgBtnCreditos.src = "./img/creditos_2.png";
+                
+                DesenhaMenu();
+		    }
+            
+            function DesenhaMenu()
+            {
+                context.clearRect(0,0,canvas.width, canvas.height);
+                context.drawImage(imgFundo, 0, 0);
+                context.font = '100px Courier';
+                context.fillStyle = 'black';
+                //Nome do Jogo
+                context.fillText('VirOSI', 540, 140);
+                //Botoes do menu
+                context.drawImage(imgBtnJogar,    670, 200);
+                context.drawImage(imgBtnTutorial, 670, 300);
+                context.drawImage(imgBtnCreditos, 670, 400);
+                // logo fatec
+                context.drawImage(imgFatec, 50, 80);
+                // voltar pro menu
+                context.font = '25px Arial Black';
+                context.fillText('Recorde: '+pontuacaoMaxima, 600, 540);
+            }
+            
+            function AtualizaCreditos(){
+                imgFundo.src = "./img/tela_titulo_2.png";
+                DesenhaCreditos();
+                
+            }
+            
+            function DesenhaCreditos(){
+                context.clearRect(0,0,canvas.width, canvas.height);
+                context.drawImage(imgFundo, 0, 0);
+                context.font = '47px Courier';
+                context.fillStyle = 'black';
+                context.fillText('Desenvolvedores', 450, 85);
+                context.fillText('Professores', 450, 275);
+                
+                context.font = '37px Courier';
+                context.fillStyle = 'black';
+                context.fillText('Agradecimento Especial', 450, 435);
+                
+                context.font = '25px Courier';
+                //alunos
+                context.fillText('Anderson Lage Carneiro', 480, 120);
+                context.fillText('Arthur Fernandes N. da Silva', 480, 155);
+                context.fillText('Augusto Gomes Tavares da Silva', 480, 190);
+                context.fillText('Caio Fernandes Nascimento da Silva', 480, 225);
+                //professores
+                context.fillText('Dr. Alexandre Santaella Braga', 480, 310);
+                context.fillText('Me. Fábio Henrique Cabrini', 480, 345);
+                context.fillText('Me. Leandro Ramos da Silva', 480, 380);
+                context.fillText('Esp. Willians Monteiro da Silva', 480, 470);
+                // voltar pro menu
+                context.font = '25px Arial Black';
+                context.fillText('ESC para Voltar ', 780, 540);
+                // logo fatec
+                context.drawImage(imgFatec, 50, 80);
+                
+            }
+            
+            function AtualizaTutorial(){
+                imgFundo.src = "./img/tela_titulo.png";
+                DesenhaTutorial();
+                
+            }
+            
+            function DesenhaTutorial(){
+                context.clearRect(0,0,canvas.width, canvas.height);
+                context.drawImage(imgFundo, 0, 0);
+                context.font = '60px Courier';
+                context.fillStyle = 'black';
+                context.fillText('Tutorial', 450, 100);
+                context.drawImage(imgTxtTutorial, 450, 130);
+                // voltar pro menu
+                context.font = '25px Arial Black';
+                context.fillText('ESC para Voltar ', 780, 540);
+                // logo fatec
+                context.drawImage(imgFatec, 50, 80);
+                
+            }
+            
+            
+            function AtualizaJogo(){
+                
+                DesenhaJogo();
+                if (mouse.camada != -1) {
+                    
+                    botoes[mouse.camada].x = mouse.x - (botoes[mouse.camada].imagem.width / 2);
+                    botoes[mouse.camada].y = mouse.y - (botoes[mouse.camada].imagem.height / 2);
+                
+                }
+                
+            }
+            
+            function DesenhaJogo(){
+                
+                
+                if(telaAtual==3){
+                    context.clearRect(0,0,canvas.width, canvas.height);
+                    context.drawImage(imgBg, 0,0);
+                    context.drawImage(imgFundo, -18, 0);
+                    context.drawImage(imgFatec, 50, 500);
+                }else{
+                    // desenha o fundo
+                    context.clearRect(0,0,canvas.width, canvas.height);
+                    context.drawImage(imgBg, 0,0);
+                    context.drawImage(imgFundo, 0, 0);
+                    context.drawImage(imgFatec, 50, 500);
+                }
+                
+                
+                if (!transicao)
+                {
+                    // desenha os espaços para encaixar as camadas
+                    for(var i = 0; i < espacoBotoes.length;i++)
+                        context.drawImage(espacoBotoes[i].imagem, espacoBotoes[i].x, espacoBotoes[i].y);
+
+                    // desenha as camadas OSI
+                    for(var i = 0; i < botoes.length;i++)
+                        context.drawImage(botoes[i].imagem, botoes[i].x, botoes[i].y);
+                }
+                else
+                {
+                    //mostrar pontuação na tela de transição
+                    context.font = '36px Comic Sans MS';
+                    context.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                    context.fillText('Tempo Restante: '+timer+'seg = '+timer*76+' pontos', 168, 230);
+                    context.fillText('Pontuação Total: '+pontuacao+' pontos', 168, 350);
+                    if (telaAtual != telaFinal)
+                    {
+                        context.font = '25px Comic Sans MS';
+                        context.fillText('Proxima Fase começará em instanstes ...', 380, 445);
+                    }
+                    else 
+                    {
+                        context.font = '30px Comic Sans MS';
+                        context.fillText('PARABÉNS VOCÊ CONSEGUIU !!!', 370, 445);
+                    }
+                }
+                
+                context.font = '26px Arial';
+                context.fillStyle = 'black';
+                //context.fillText('mouse(x,y): '+mouse.x+','+mouse.y, 10, 30);
+                //Tempo
+                context.drawImage(imgTempo, 10, 10);
+                context.fillText(timer, imgTempo.width + 20, 30);
+                //Fase
+                context.drawImage(imgFase, 280, 10);
+                context.fillText(telaAtual, 375, 30);
+                //Acertos
+                context.drawImage(imgAcertos, 515, 10);
+                context.fillText(acertos, 670, 33);
+                //Pontos
+                context.drawImage(imgPontos, 770, 10);
+                context.fillText(pontuacao, 888, 32);
+                // voltar pro menu
+                context.font = '25px Arial Black';
+                context.fillText('ESC para Voltar ', 780, 540);
+                
+            }
+            
+            function Botao(tipo)
+            {
+                this.id = seqBotoes;
+                seqBotoes++;
+                this.x = 0;
+                this.y = 0;
+                this.tipo = tipo;
+                //this.arrastando = false;
+                this.imagem = new Image();
+                this.imagem.src = './img/'+(tipo+1)+'.PNG';
+                this.x2 = 0;
+                this.y2 = 0;
+            }
+            
+            function EspacoBotao(tipo,x,y,coluna)
+            {
+                this.x = x;
+                this.y = y;
+                this.coluna = coluna; // E - esquerda / D - direira / R - roteador / S - Switch
+                this.preenchido = -1; // ID da camadas OSI(botoes) - precisa ser um valor unico
+                this.tipoCamada = -1;
+                this.tipo = tipo;
+                this.imagem = new Image();
+                this.imagem.src = './img/espaco.png';
+                this.x2 = 0;
+                this.y2 = 0;
+            }
+            
+            function IniciarCamadas()
+            {
+                var qtd = 0;
+                var j;
+                
+                if (telaAtual == 1){
+                    imgFundo.src = "./img/fundo1.png";
+                    qtd = 2;
+                    j = 0;
+                    botoes = [];
+                    for(var i = 1; i <= qtd;i++)
+                    {                
+                        botoes[j] = new Botao(TiposCamadas.Fisica);
+                        botoes[j].x = 411;
+                        botoes[j].y = 100;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.DataLink);
+                        botoes[j].x = 411;
+                        botoes[j].y = 40;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.Network);
+                        botoes[j].x = 411;
+                        botoes[j].y = 220;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.Transport);
+                        botoes[j].x = 411;
+                        botoes[j].y = 130;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.Session);
+                        botoes[j].x = 411;
+                        botoes[j].y = 160;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.Presentation);
+                        botoes[j].x = 411;
+                        botoes[j].y = 70;
+                        j++;
+                        botoes[j] = new Botao(TiposCamadas.Application);
+                        botoes[j].x = 411;
+                        botoes[j].y = 190;
+                        j++;
+
+                    }
+                    
+                }else if (telaAtual == 2){
+                        imgFundo.src = './img/fundo2.png';
+                        j = 0;
+                        qtd = 4;
+                        botoes = [];
+                        for(var i = 1; i <= qtd;i++)
+                        {                
+                            botoes[j] = new Botao(TiposCamadas.Fisica);
+                            botoes[j].x = 420;
+                            botoes[j].y = 130;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.DataLink);
+                            botoes[j].x = 420;
+                            botoes[j].y = 40;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.Network);
+                            botoes[j].x = 420;
+                            botoes[j].y = 160;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.Transport);
+                            botoes[j].x = 420;
+                            botoes[j].y = 100;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.Session);
+                            botoes[j].x = 420;
+                            botoes[j].y = 220;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.Presentation);
+                            botoes[j].x = 420;
+                            botoes[j].y = 190;
+                            j++;
+                            botoes[j] = new Botao(TiposCamadas.Application);
+                            botoes[j].x = 420;
+                            botoes[j].y = 70;
+                            j++;
+                    
+                        }
+                    
+                    
+                       }else if(telaAtual == 3){
+                           imgFundo.src = './img/fundo3.png';
+                            qtd = 5;
+                            var j = 0;
+                            botoes = [];
+                            for(var i = 1; i <= qtd;i++)
+                            {                
+                                botoes[j] = new Botao(TiposCamadas.Fisica);
+                                botoes[j].x = 420;
+                                botoes[j].y = 220;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.DataLink);
+                                botoes[j].x = 420;
+                                botoes[j].y = 100;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.Network);
+                                botoes[j].x = 420;
+                                botoes[j].y = 40;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.Transport);
+                                botoes[j].x = 420;
+                                botoes[j].y = 70;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.Session);
+                                botoes[j].x = 420;
+                                botoes[j].y = 190;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.Presentation);
+                                botoes[j].x = 420;
+                                botoes[j].y = 130;
+                                j++;
+                                botoes[j] = new Botao(TiposCamadas.Application);
+                                botoes[j].x = 420;
+                                botoes[j].y = 160;
+                                j++;
+                    
+                            }
+                
+                    }
+            }
+            
+            function IniciarEspacos()
+            {
+                espacoBotoes = [];
+                if (telaAtual == 1 )
+                {
+                    //coluna da esquerda
+                    var y = 225;
+                    var x = 230;
+                    var tipo = 6;
+                    var espacamento = 30;
+                    for(var i = 0; i < 7;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'E'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna da direita
+                    y = 225;
+                    x = 612;
+                    tipo = 6;
+                    for(var i = 7; i < 14;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'D'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                }
+                if ( telaAtual == 2 )
+                {
+                    //coluna da esquerda
+                    var y = 225;
+                    var x = 153;
+                    var tipo = 6;
+                    var espacamento = 30;
+                    for(var i = 0; i < 7;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'E'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna do roteador
+                    y = 375;
+                    x = 428;
+                    tipo = 1;
+                    for(var i = 7; i < 9;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'R'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna da direita
+                    y = 225;
+                    x = 715;
+                    tipo = 6;
+                    for(var i = 9; i < 16;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'D'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    
+                }
+                
+                 if ( telaAtual == 3 )
+                {
+                    //coluna da esquerda
+                    var y = 226;
+                    var x = 29;
+                    var tipo = 6;
+                    var espacamento = 30;
+                    for(var i = 0; i < 7;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'E'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna do roteador
+                    y = 376;
+                    x = 304;
+                    tipo = 1;
+                    for(var i = 7; i < 9;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'R'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna do switch
+                    y = 345;
+                    x = 553;
+                    tipo = 2;
+                    for(var i = 9; i < 12;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'S'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    //coluna da direita
+                    y = 226;
+                    x = 813;
+                    tipo = 6;
+                    for(var i = 12; i < 19;i++) {
+                        espacoBotoes[i] = new EspacoBotao(tipo,x,y,'D'); 
+                        y += espacamento;
+                        tipo--;
+                    }
+                    
+                    
+                }
+                
+            }
+            
+            function ProximaTela()
+            {
+                if(telaAtual == telaFinal){
+                    estadoDoJogo = estados.creditos;
+                    btnFim.style.display = 'none';
+                    //guardar a pontuação mais alta do jogador
+                    SalvarPontuacao();
+                }
+                else{
+                    transicao = false;
+                    btnFim.style.display = 'initial';
+                    telaAtual++;
+                    BotaoSoltoMouse();
+                    IniciarCamadas();
+                    IniciarEspacos();
+                    imgFundo.src = './img/fundo'+telaAtual+'.png';
+                    ReiniciarTimer();
+                    timerIntervaloId = setInterval(Timer, 1000);
+                    acertos = 0;
+                }
+            }
+            
+            function SalvarPontuacao()
+            {
+                if (pontuacaoMaxima < pontuacao)
+                {
+                    pontuacaoMaxima = pontuacao;
+                }
+                pontuacao = 0;
+            }
+            
+            function ReiniciarTimer()
+            {
+                if(telaAtual==1)
+                    timer = 120;
+                else if(telaAtual==2)
+                    timer = 150;
+                else if(telaAtual==3)
+                    timer = 190;
+            }
+            
+           function VerificaColisao ()
+           {
+                if (mouse.camada != -1)
+                {
+                    for(var i = 0; i < espacoBotoes.length;i++)
+                    {
+                        //verificar se a camada que o mouse esta segurando esta colidindo com algum espaço
+                        if (Colisao(botoes[mouse.camada],espacoBotoes[i]))
+                        {
+                            // espaço não esta vazio E nao esta tentando colocar de volta a mesma camada no espaço
+                            if(espacoBotoes[i].preenchido != -1 && espacoBotoes[i].preenchido != botoes[mouse.camada].id)
+                            {
+                                // descobrir o indice da camada que ocupava esse espaço
+                                var indice = EncontrarIndice (espacoBotoes[i].preenchido);
+                                
+                                //outra camada ainda esta no espaço
+                                if (Colisao(botoes[indice],espacoBotoes[i]))
+                                {
+                                    //se espaço esta na Esquerda mover camada para direita e cima
+                                    if (espacoBotoes[i].coluna == 'E')
+                                    {
+                                        botoes[indice].x += espacoBotoes[i].imagem.width;
+                                        botoes[indice].y += 10;
+                                    }
+                                    else
+                                    {
+                                    //se espaço esta na Direita mover camada para esquerda e baixo
+                                        botoes[indice].x -= (espacoBotoes[i].imagem.width);
+                                        botoes[indice].y -= 10;
+                                    }
+                                    
+                                }   
+                                
+                            }
+                            
+                            espacoBotoes[i].preenchido = botoes[mouse.camada].id;
+                            espacoBotoes[i].tipoCamada = botoes[mouse.camada].tipo;
+                            botoes[mouse.camada].x = (espacoBotoes[i].x + espacoBotoes[i].imagem.width / 2) - (botoes[i].imagem.width / 2);
+                            botoes[mouse.camada].y = (espacoBotoes[i].y + espacoBotoes[i].imagem.height / 2) - (botoes[i].imagem.height / 2);
+                            
+                        }
+                    }
+                }
+           } 
+            
+           function EncontrarIndice (id)
+           {
+                // descobrir o indice da camada que tem esse id
+                for(var j = 0; j < botoes.length;j++)
+                {
+                    if (botoes[j].id == id)
+                        return j;
+                }
+           }
+            
+           function Colisao(Quadrado1,Quadrado2) 
+           {
+           //PASSAR A MENOR IMAGEM COMO PRIMEIRO PARAMETRO(QUADRADO1)
+               var colidindo;
+               
+               //atualizar o x2 e y2
+               Quadrado1.x2 = Quadrado1.x+Quadrado1.imagem.width;
+               Quadrado1.y2 = Quadrado1.y+Quadrado1.imagem.height;
+               Quadrado2.x2 = Quadrado2.x+Quadrado2.imagem.width;
+               Quadrado2.y2 = Quadrado2.y+Quadrado2.imagem.height;
+               
+               if ( Quadrado1.x >= Quadrado2.x 
+                 && Quadrado1.x <= Quadrado2.x2
+                 && Quadrado1.y >= Quadrado2.y 
+                 && Quadrado1.y <= Quadrado2.y2 ){
+                   colidindo = true;
+               }
+               else if ( Quadrado1.x2 >= Quadrado2.x 
+                      && Quadrado1.x2 <= Quadrado2.x2
+                      && Quadrado1.y >= Quadrado2.y 
+                      && Quadrado1.y <= Quadrado2.y2 ){
+                   colidindo = true;
+               }
+               else if ( Quadrado1.x >= Quadrado2.x 
+                      && Quadrado1.x <= Quadrado2.x2
+                      && Quadrado1.y2 >= Quadrado2.y 
+                      && Quadrado1.y2 <= Quadrado2.y2 ){
+                   colidindo = true;
+               }
+               else if ( Quadrado1.x2 >= Quadrado2.x 
+                      && Quadrado1.x2 <= Quadrado2.x2
+                      && Quadrado1.y2 >= Quadrado2.y 
+                      && Quadrado1.y2 <= Quadrado2.y2 ){
+                   colidindo = true;
+               }
+               else 
+                   colidindo = false;
+               
+               return colidindo;
+		   }
+
+           function TravaCamada()
+           {
+               for(var i = botoes.length-1;i >= 0;i--){
+                   if ( mouse.x >= botoes[i].x
+                     && mouse.x <= (botoes[i].x + botoes[i].imagem.width) 
+                     && mouse.y >= botoes[i].y 
+                     && mouse.y <= (botoes[i].y + botoes[i].imagem.height) 
+                     && mouse.camada == -1 ){
+                       botoes.push(botoes[i]);  //inseri no fim da lista
+                       botoes.splice(i,1);      //retira da posição atual
+                       i = botoes.length-1;     //i recebe posiçao atual
+                       mouse.camada = i;
+                       botoes[i].x = mouse.x - (botoes[i].imagem.width / 2);
+                       botoes[i].y = mouse.y - (botoes[i].imagem.height / 2);
+                   }
+               }
+           }
+
+           function MouseMove(e){
+		   	mouse.x = e.clientX;
+		   	mouse.y = e.clientY;
+		   }
+		   
+		   function BotaoPressionadoMouse(e){
+		   	mouse.botao = e.button;
+               if (mouse.camada == -1)
+                   TravaCamada();
+		   }
+            
+           function VerificaTeclaPressionada(e)
+            {
+               if(estadoDoJogo == estados.menu) 
+                {
+                    if(e.keyCode == 40 || e.keyCode == 83) //para baixo ou S
+                        if(btnSelecionado == 'J')
+                            btnSelecionado = 'T';
+                        else if(btnSelecionado == 'T')
+                            btnSelecionado = 'C';
+                    if(e.keyCode == 38 || e.keyCode == 87) //para cima ou W
+                        if(btnSelecionado == 'C')
+                            btnSelecionado = 'T';
+                        else if(btnSelecionado == 'T')
+                            btnSelecionado = 'J';
+                        
+                   
+                    if(e.keyCode == 13 || e.keyCode == 32) //ENTER ou espaço
+                       {
+                           if(btnSelecionado == 'J')
+                           {
+                               telaAtual = 0;
+                               ProximaTela();
+                               estadoDoJogo = estados.jogo;
+                           }
+                           else if(btnSelecionado == 'T')
+                           {
+                               estadoDoJogo = estados.tutorial;
+                           }
+                           else if(btnSelecionado == 'C')
+                           {
+                               estadoDoJogo = estados.creditos;
+                           }
+                       }
+                }
+               if((estadoDoJogo == estados.tutorial || estadoDoJogo == estados.creditos || estadoDoJogo == estados.jogo) && e.keyCode == 27)//ESC 
+                {
+                    estadoDoJogo = estados.menu; 
+                    btnFim.style.display = 'none';
+                    SalvarPontuacao();
+                }
+                     
+           }
+               
+           function BotaoSoltoMouse(){
+               VerificaColisao();
+               mouse.botao  = -1;
+               mouse.camada = -1;
+           } 
+            
+           function Botaoterminar(){
+               VerificarAcertos();
+               if(acertos == espacoBotoes.length)
+               {
+                   clearInterval(timerIntervaloId);
+                   Transicao();
+                   pontuacao += timer*76;
+                   setTimeout(ProximaTela,10000);
+               }
+           }
+            
+           function Timer(){
+               timer--;
+               if (timer == 0)
+                   clearInterval(timerIntervaloId);
+           }
+        
+           function VerificarAcertos()
+           {
+               var alerta = false;
+               acertos = 0;
+               espacoBotoes.forEach(
+                   function ( espaco )
+                    {
+                        if( !alerta && ( espaco.preenchido == -1 || !Colisao(botoes[EncontrarIndice(espaco.preenchido)], espaco) ) )
+                        {
+                            alert('Você deve preencher todas as camadas antes de apertar o botão !!!');
+                            alerta = true;
+                        }
+                        else if (espaco.tipoCamada == espaco.tipo)
+                            acertos++;
+                    }
+                );
+           } 
+            
+           function Transicao()
+           {
+               transicao = true;
+               imgFundo.src = "./img/fundoTransicao.png";
+               btnFim.style.display = 'none';
+           } 
+            
+           function PiscarCursor()
+           {
+               if (cursor){
+                   cursor = false;
+                   btnFim.innerHTML = 'Enviar  █';
+               }
+               else{
+                   cursor = true;
+                   btnFim.innerHTML = 'Enviar    ';
+                   
+               }
+           } 
+            
+        </script>
+    </head>
+    <body onload="Iniciar();" onkeydown="VerificaTeclaPressionada(event);" >
+        <canvas id="canvas" width="1024" height="560" onmousemove="MouseMove(event);" onmousedown="BotaoPressionadoMouse(event);" onmouseup="BotaoSoltoMouse(event);" >
+            Sem suporte ao canvas html5
+        </canvas>
+        <div style="width:1024;height:5;text-align: center"></div>
+        <div style="width:1024;height:60;text-align: center">
+            <button id="fim" onclick="Botaoterminar();" style="text-align:center;
+                                                               border: none;
+                                                               font-size:200%;
+                                                               padding: 8px 40px;
+                                                               background-color:rgb(40, 40, 40);
+                                                               color:rgb(255, 176, 0);" width: 250px>Enviar    </button> 
+        </div>
+    </body>
+</html>
